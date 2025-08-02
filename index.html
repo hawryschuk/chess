@@ -8,6 +8,17 @@
 
 <body>
 
+    <form id="orientationForm">
+        <label>
+            <input type="radio" name="orientation" value="white" checked>
+            White
+        </label>
+        <label>
+            <input type="radio" name="orientation" value="black">
+            Black
+        </label>
+    </form>
+
     <div id="myBoard" style="width: 400px"></div>
 
     <script src="node_modules/jquery/dist/jquery.min.js"></script>
@@ -15,8 +26,13 @@
     <script>
         var board = Chessboard('myBoard', 'start');
 
-        board.orientation('black')
+        // Set initial orientation based on default radio
+        board.orientation('white');
 
+        // Listen for radio changes
+        $('#orientationForm input[name="orientation"]').on('change', function () {
+            board.orientation(this.value);
+        });
     </script>
 </body>
 
