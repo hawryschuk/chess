@@ -4,35 +4,134 @@
 <head>
     <link rel="stylesheet" href="node_modules/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.min.css"
         crossorigin="anonymous">
+    <style>
+        #boards {
+            display: flex;
+        }
+    </style>
 </head>
 
 <body>
 
-    <form id="orientationForm">
-        <label>
-            <input type="radio" name="orientation" value="white" checked>
-            White
-        </label>
-        <label>
-            <input type="radio" name="orientation" value="black">
-            Black
-        </label>
-    </form>
+    <div class="stepper">
+        <div id="moves"> </div>
 
-    <div id="myBoard" style="width: 400px"></div>
+        <!-- <button type="button" id="back">Back</button> -->
+
+        <div id="boards"></div>
+
+    </div>
 
     <script src="node_modules/jquery/dist/jquery.min.js"></script>
     <script src="node_modules/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.min.js"></script>
     <script>
-        var board = Chessboard('myBoard', 'start');
+        const player = new class {
 
-        // Set initial orientation based on default radio
-        board.orientation('white');
+            database = [
+                { appliesTo: 'white', name: 'Scholars Mate', moves: ['e2-e4', 'e7-e5', 'f1-c4', 'd1-f3', 'f3-f7'] },
 
-        // Listen for radio changes
-        $('#orientationForm input[name="orientation"]').on('change', function () {
-            board.orientation(this.value);
-        });
+                { appliesTo: 'white', name: 'Scholars Mate', moves: ['e2-e4', 'e7-e5', 'f1-c4', 'd1-h5', 'h5-f7'] },
+
+                { appliesTo: 'white', name: 'Tennison Gambit', moves: ['e2-e4', 'd7-d5', 'g1-f3', 'd5-e4', 'f3-e5', 'f7-f6', 'd1-h5', 'g7-g6', 'f1-c4', 'g6-h5', 'c4-f7'] },
+
+                { appliesTo: 'white', name: 'Mortimer Trap', moves: 'e2-e4 e7-e5 g1-f3 b8-c6 f1-b5 g8-f6 d2-d3 c6-e7 f3-e5 c7-c6 e5-c4 c6-b5 c4-d6'.split(' ') },
+
+                { appliesTo: 'black', name: 'Scandinavian Defense', moves: 'e2-e4 d7-d5 b1-c3 d5-d4 c3-d5 e7-e5 * c7-c6'.split(' ') },
+            ];
+
+            // selection = [];
+            // selection = ['white', 'e2-e4'];
+            // selection = ['white', 'e2-e4', 'e7-e5', 'f1-c4', 'd1-f3', 'f3-f7'];
+            selection = (localStorage.selection || '').split(',');
+            get Selection() { return this.selection; }
+            set Selection(selection) { localStorage.selection = this.selection = selection; this.draw(); }
+
+            constructor() {
+                for (const opening of this.database) {
+                    if (opening.inherits) {
+                        const inherits = this.database.find(o2 => o2.name == opening.inherits);
+                        opening.moves.splice(0, 0, ...inherits.moves.slice(0, inherits.moves.length - 1));
+                    }
+                }
+                this.draw();
+                $('#back').on('click', () => this.back());
+            }
+
+            back() { this.Selection = this.selection.slice(0, this.selection.length - 1); }
+            next(choice) { this.Selection = [...this.selection, choice]; }
+            async draw() {
+                $('#boards').html('');
+                $('#moves').html(this.selection.map(move => `<a href="javascript:void(0)">${move}</a>`).join(' / '))
+                $('#moves').children().each((index, child) => {
+                    $(child).on('click', () => {
+                        this.Selection = this.selection.slice(0, index);
+                        this.draw();
+                    });
+                })
+
+                if (!this.selection.length)
+                    for (const orientation of ['black', 'white'].filter(color => this.database.some(e => e.appliesTo.includes(color)))) {
+                        $('#boards').append(`<div class="board" style="width: 400px"></div>`);
+                        const el = $('#boards .board').last();
+                        const board = Chessboard(el, 'start');
+                        board.orientation(orientation);
+                        el.on('click', () => this.next(orientation));
+                    }
+                else {
+                    const moves = [...this.selection];
+                    const orientation = moves.shift();
+                    const openings = this.database
+                        .filter(opening => opening.appliesTo.includes(orientation))
+                        .filter(opening => moves.every((move, index) => opening.moves[index] == move));
+
+                    // show the next move for every opening that matches the line we have played so far
+                    for (const opening of openings) {
+
+                        // avoid repeating two openings that 
+                        const common = openings.filter(o => o.moves[moves.length] == opening.moves[moves.length]);
+                        const titles = [...new Set(common.map(o => o.name))];
+                        const title = titles.join(', ');
+                        const index = common.indexOf(opening);
+                        console.log(index, opening);
+                        if (index > 0) continue;
+
+                        // html
+                        $('#boards').append(`<div> <span class="title"> </span> <div class="board" style="width: 400px"></div> </div> `);
+
+                        // $title
+                        $('#boards .title').last().html(title);
+
+                        // $board
+                        const el = $('#boards .board').last();
+                        var board = Chessboard(el, { position: 'start', moveSpeed: 0 });
+
+                        // set orientation
+                        board.orientation(orientation);
+
+                        // play the moves so far
+                        for (const move of moves) board.move(move);
+
+                        // show the openings next move
+                        const final = opening.moves.length === moves.length && 'red';
+                        const secondLast = opening.moves.length === moves.length + 1 && 'green';
+                        const nextMove = final ? opening.moves[moves.length - 1] : opening.moves[moves.length];
+                        const position = board.position();
+                        board.destroy();
+                        board = Chessboard(el, position);
+                        board.orientation(orientation);
+
+                        if (!final) {
+                            board.move(nextMove);
+                            el.on('click', () => this.next(nextMove));
+                        }
+
+                        $('#moves a').eq(opening.moves.length).css('color', 'red');
+                        $('#moves a').eq(opening.moves.length - 1).css('color', 'green');
+                    }
+                }
+            }
+        }
+
     </script>
 </body>
 
