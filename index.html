@@ -132,7 +132,7 @@
                     const orientation = opening.appliesTo;
                     const final = opening.moves.length === moves.length && 'red';
                     const secondLast = opening.moves.length === moves.length + 1 && 'green';
-                    const nextMove = opening.moves.length === 0 && orientation
+                    var nextMove = opening.moves.length === 0 && orientation
                         || opening.moves[moves.length]
                         || opening.moves[moves.length - 1];
                     const domove = (board, move) => {
@@ -197,10 +197,12 @@
                         onDrop: (source, target, piece, newPos, oldPos, orientation) => {
                             const checkmate = target == 'offboard' && piece.endsWith('K') && '#';
                             const valid = target !== 'offboard' || checkmate;
-                            if (source == target) this.next(nextMove);
-                            else if (valid) {
+                            if (source == target) {
+                                if (!secondLast) this.next(nextMove);
+                            } else if (valid) {
                                 const move = checkmate || [source, target].join('-');
                                 const newOpening = this.selection.length === 0;
+                                const samecolor = piece[0] === board.position()[nextMove.split('-')[1]][0];
                                 if (newOpening) this.next(orientation);
                                 if (!final || newOpening) {
                                     this.database.push(opening = JSON.parse(JSON.stringify(opening)));
