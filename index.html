@@ -63,6 +63,8 @@
 
                 // https://www.youtube.com/watch?v=Uno3DLxDufI&list=PL90OzHiSE_mQcVlOHQ0_niB29icDmDipY&index=14
                 { appliesTo: 'black', name: 'Soller Gambit', moves: 'd2-d4 e7-e5 d4-e5 f7-f6 e5-f6 g8-f6 g1-f3 f8-c5 c1-g5 f6-e4 g5-d8 c5-f2 f2-e1'.split(' ') },
+
+                { "appliesTo": "white", "name": "Alekhines Defense", "moves": 'e2-e4 g8-f6 e4-e5 f6-d5 g1-f3 d7-d6 f1-c4 d5-b6 c4-f7 e8-f7 f3-g5 f7-g6 d1-f3 g6-g5 h2-h4 g5-g6 h4-h5 g6-h6 f3-f7 d6-e5 d2-d4 g7-g5 h5-g5&g5-g6 #'.split(' ') }
             ];
 
             selection = (localStorage.selection || '').split(',').filter(Boolean);
@@ -72,7 +74,7 @@
             opening = undefined;
             get Opening() { return this.database[this.opening] }
 
-            get turn() { return ['white', 'black'][this.selection.length % 2]; }
+            get turn() { return ['black', 'white'][this.selection.length % 2]; }
 
             constructor() {
                 document.addEventListener('keydown', event => { if (event.key === 'ArrowLeft') this.back(); });
@@ -88,8 +90,8 @@
                 this.draw();
             }
 
-            back() {
-                this.moveSpeed = 0;
+            async back() {
+                if (this.selection.length > 2) this.moveSpeed = 0;
                 this.Selection = this.selection.slice(0, this.selection.length - 1);
                 delete this.moveSpeed;
             }
@@ -99,13 +101,14 @@
                     this.Selection = [...this.selection, choice];
             }
 
-            async draw() {
+            draw() {
                 const { moveSpeed } = this;
                 const moves = [...this.selection];
+                const database = this.database.sort((a, b) => b.moves.length - a.moves.length)
                 const orientation = moves.shift();
                 const openings = this.Opening && [this.Opening]
                     || !orientation && ['black', 'white'].map(appliesTo => ({ appliesTo, moves: [] }))
-                    || this.database
+                    || database
                         .filter(opening => !orientation || opening.appliesTo.includes(orientation))
                         .filter(opening => moves.every((move, index) => opening.moves[index] == move));
 
@@ -120,7 +123,9 @@
 
                 // show the next move for every opening that matches the line we have played so far
                 for (var opening of openings) {
-                    const common = !this.selection.length ? this.database.filter(o => o.appliesTo === opening.appliesTo) : openings.filter(o => o.moves[moves.length] == opening.moves[moves.length]);
+                    const common = !this.selection.length
+                        ? database.filter(o => o.appliesTo === opening.appliesTo)
+                        : openings.filter(o => o.moves[moves.length] == opening.moves[moves.length]);
                     const titles = [...new Set(common.map(o => o.name))];
                     const title = titles.join(', ');
                     const index = common.indexOf(opening);
@@ -130,7 +135,16 @@
                     const nextMove = opening.moves.length === 0 && orientation
                         || opening.moves[moves.length]
                         || opening.moves[moves.length - 1];
-                    const domove = (board, move) => { for (const m of move.split('&')) board.move(m); };
+                    const domove = (board, move) => {
+                        for (const m of move.split('&'))
+                            if (m === '#') {
+                                const position = board.position();
+                                const kingPosition = Object.keys(position).find(square => position[square] === `${this.turn[0]}K`);
+                                delete position[kingPosition];
+                                board.position(position);
+                            }
+                            else board.move(m);
+                    };
 
                     if (index > 0 && opening.moves.length) continue;
 
@@ -155,7 +169,7 @@
                         const method = 2;
                         if (method == 2) {  /** Method 2 : remove all pieces of the current turn */
                             for (const [k, v] of [...Object.entries(position)])
-                                if (!v.startsWith(this.turn.at(0))) {
+                                if (v.startsWith(this.turn.at(0))) {
                                     delete position[k];
                                 }
                         } else {            /** Method 1 ; remove all untouched pieces */
@@ -179,19 +193,24 @@
                         draggable: true,
                         moveSpeed,
                         orientation,
+                        // let the user extend the opening with a new move -- copying the change to the clipboard for it to be pasted and hard-coded...
                         onDrop: (source, target, piece, newPos, oldPos, orientation) => {
+                            const checkmate = target == 'offboard' && piece.endsWith('K') && '#';
+                            const valid = target !== 'offboard' || checkmate;
                             if (source == target) this.next(nextMove);
-                            else if (target !== 'offboard') {
-                                const move = [source, target].join('-');
-                                if (!final) {
+                            else if (valid) {
+                                const move = checkmate || [source, target].join('-');
+                                const newOpening = this.selection.length === 0;
+                                if (newOpening) this.next(orientation);
+                                if (!final || newOpening) {
                                     this.database.push(opening = JSON.parse(JSON.stringify(opening)));
                                     opening.moves.splice(this.selection.length - 1);
-                                    opening.title += ' ( clone )';
+                                    opening.name += ' ( clone )';
                                 }
                                 opening.moves = [...this.selection.slice(1), ...(final ? [] : [nextMove]), move];
                                 if (!final) this.next(nextMove);
                                 this.next(move);
-                                navigator.clipboard.writeText(opening.moves.join(' '));
+                                navigator.clipboard.writeText(opening.moves.join(' '));//JSON.stringify(opening) + '\n' + 
                             }
                         }
                     });
