@@ -19,8 +19,8 @@ export class App {
         return ['white', 'black'][selection.length % 2];
     }
 
-    otherTurn(nextMove) {
-        return ['black', 'white'].find(c => c !== this.turn(nextMove))
+    otherTurn(turn) {
+        return ['black', 'white'].find(c => c !== turn)
     }
 
     constructor() {
@@ -45,7 +45,7 @@ export class App {
         $('#opening')
             .html('<option value="">--opening--</option>' + this.database.map((o, i) => `<option value=${i}>${o.appliesTo} : ${o.name}</option>`).join(''))
             .on('change', ({ target }) => { this.Opening = target.value; $(target).blur() })
-            .val(this.database.indexOf(this.Opening));
+            .val(this.Opening ? this.database.indexOf(this.Opening) : '');
         this.draw();
         // this.test();
     }
@@ -57,7 +57,7 @@ export class App {
         for (const o of this.database.slice(lastTest)) {
             const index = this.database.indexOf(o).toString();
             this.Opening = index;
-            console.log(localStorage.lastTest = index);
+            // console.log(localStorage.lastTest = index);
             await this.pause();
             for (const move of o.moves) {
                 this.Selection = [...this.Selection, move];
@@ -68,7 +68,7 @@ export class App {
     }
 
     back() {
-        if (this.Selection.length > 1) {
+        if (this.Selection.length >= (this.Opening ? 2 : 0)) {
             this.moveSpeed = 1;
             this.Selection = this.Selection.slice(0, this.Selection.length - 1);
             delete this.moveSpeed;
@@ -109,14 +109,17 @@ export class App {
             });
         });
 
+        if (this.Selection.length && !openings.length) {
+            const newOpening = { appliesTo: orientation, moves };
+            openings.push(newOpening);
+        }
+
         // show the next move for every opening that matches the line we have played so far
         this.drawn = [];
         for (const opening of openings) {
             const common = !this.Selection.length
                 ? database.filter(o => o.appliesTo === opening.appliesTo)
                 : openings.filter(o => o.moves[moves.length] == opening.moves[moves.length]);
-            const titles = [...new Set(common.map(o => o.name))];
-            const title = titles.join(', ');
             const index = common.indexOf(opening);
             const orientation = opening.appliesTo;
             const final = opening.moves.length === moves.length && 'red';
@@ -126,53 +129,32 @@ export class App {
                 || !final && opening.moves[moves.length - 1]
                 || '';
             const game = new Chess;
-
-            if (moves.at(-1) == 'd7-d5' && nextMove === 'd7-d5') debugger;
-
-            // console.clear();
-
-            const gamemove = (from, to, promotion) => {
-                // try {
-                // console.log(from, to)
-                game.move({ from, to, promotion });
-                // } catch (e) {
-                // debugger;
-                // console.log(e);
-                // debugger;
-                //     throw e;
-                // }
-            };
+            let clearPieces;
 
             // make the move : 1) chessboardjs(ui), 2) chessjs (memory)
-            const domove = (board, move, islast) => {
+            const domove = (game, board, move, islast) => {
                 if (move.match(/black|white/)) return;
-
+                const gamemove = (from, to, promotion) => { game.move({ from, to, promotion }); };
                 const moves = move.split('&').filter(Boolean);
                 let doublemove = moves.length > 1 ? 1 : 0;
                 for (const m of moves) {
                     if (m === '#') { // signifies checkmate
-                        const turn = moves.length == 1 ? this.turn(nextMove) : this.otherTurn(nextMove);
+                        const turn = game.turn();
                         const position = board.position();
                         const kingPosition = Object.keys(position).find(square => position[square] === `${turn[0]}K`);
                         delete position[kingPosition];
                         board.position(position);
                     } else if (m === '*') { // signifies any piece can move -- visualized by hiding all color's pieces
-                        const position = board.position();
-                        if (islast) {
-                            for (const [k, v] of [...Object.entries(position)])
-                                if (v.startsWith(this.turn(nextMove).at(0)))
-                                    delete position[k];
-                            board.position(position);
-                        }
-
+                        clearPieces ||= game.turn();
                         game.move(game.moves()[0]);
                     } else {
+                        const [from, to, _promotion] = m.match(/^([a-h][1-8])-([a-h][1-8])([rqbn])?$/i)?.slice(1) || [];
+                        // console.log({ from, to, _promotion, m })
                         // chessboardjs -- ui board
-                        board.move(m);
+                        board.move(`${from}-${to}`);
 
-                        const [from, to] = m.match(/^([a-h][1-8])-([a-h][1-8])/i)?.slice(1) || [];
                         const piece = board.position()[to];
-                        const promotion = piece[1] === 'P' && '18'.includes(to[1]) ? 'q' : undefined; // auto-rpomote to queen
+                        const promotion = piece[1] === 'P' && '18'.includes(to[1]) ? _promotion || 'q' : undefined; // auto-rpomote to queen
 
                         // replace the pawn with a queen on the chessboardjs
                         if (promotion) {
@@ -232,30 +214,36 @@ export class App {
             // we create one temporary chessboard to plot each, without animation, to get the position, 
             let position = (() => {
                 const board1 = Chessboard($board, { position: 'start', moveSpeed: 0, orientation });
-                for (const move of moves) domove(board1, move, false);
+                for (const move of moves) domove(game, board1, move, false);
                 const position = board1.position();
                 board1.destroy();
                 return position;
             })();
 
-            console.log({ nextMove, nextMoveNot: nextMove !== '#', moves: game.moves(), o: !this.Opening, draggable: nextMove !== '#' && !this.Opening && game.moves().length });
+            const nextMoves = (() => {
+                const game2 = new Chess(game.fen());
+                const board2 = Chessboard($board, { position, moveSpeed, orientation, moveSpeed: 0 });
+                if (nextMove) domove(game2, board2, nextMove, true);
+                board2.destroy();
+                return game2.moves();
+            })();
 
             const board = Chessboard($board, {
                 position,
-                draggable: nextMove !== '#' && !this.Opening && !!game.moves().length,
+                draggable: nextMove !== '#' && !this.Opening && !!nextMoves.length,
                 moveSpeed,
                 orientation,
+                onDragStart: (source, piece) => {
+                    const correcturn = piece.startsWith(game.turn()[0]);
+                    return correcturn;
+                },
                 // let the user extend the opening with a new move -- copying the change to the clipboard for it to be pasted and hard-coded...
                 onDrop: (source, target, piece, newPos, oldPos, orientation) => {
-                    const correcturn = piece.startsWith(this.otherTurn(nextMove)[0]);
                     const checkmate = target == 'offboard' && piece.endsWith('K') && '#';
-                    const valid = (target !== 'offboard' || checkmate) && correcturn;
 
-                    if (!valid) return 'snapback';
-
-                    // debugger;
-                    if (source == target) {
-                        if (!secondLast) this.next(nextMove);
+                    if (target === 'offboard' && !checkmate) return 'snapback';
+                    else if (source == target) {
+                        if (nextMove) this.next(nextMove);
                         else return;
                     }
 
@@ -282,7 +270,7 @@ export class App {
 
                         // en passent : same row : one file over
                         else if (piece.endsWith('P') && (source[1] === target[1]) && Math.abs(source.charCodeAt(0) - target.charCodeAt(0)) === 1) {
-                            const second = `${target}-${target[0]}${parseInt(target[1]) + (this.otherTurn(nextMove)[0] === 'w' ? 1 : -1)}`;
+                            const second = `${target}-${target[0]}${parseInt(target[1]) + (game.turn()[0] === 'w' ? 1 : -1)}`;
                             return [move, second].join('&');
                         }
 
@@ -327,11 +315,19 @@ export class App {
                 }
             });
 
-            if (nextMove) domove(board, nextMove, true);
+            if (nextMove) {
+                domove(game, board, nextMove, true);
+                if (!secondLast) $board.on('click', () => { this.next(nextMove); });
+                $board.find('.next .by').html(game.turn());
+            }
 
-            position = board.position();
-
-            if (nextMove && !secondLast) $board.on('click', () => { this.next(nextMove); });
+            if (clearPieces && nextMove && !final && !secondLast && game.turn() != clearPieces) {
+                const position = board.position();
+                for (const [k, v] of [...Object.entries(position)])
+                    if (v.startsWith(clearPieces))
+                        delete position[k];
+                board.position(position);
+            }
 
             this.drawn.push({ board, openings: common, nextMove, game })
         }

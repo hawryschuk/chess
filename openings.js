@@ -64,4 +64,25 @@ export const openings = [
     { appliesTo: 'black', name: `King's Pawn Opening: Wayward Queen Attack (2)`, moves: 'e2-e4 e7-e5 d1-h5 b8-c6 f1-c4 g7-g6 h5-f3 g8-f6 f3-b3 c6-d4 c4-f7 e8-e7 b3-c4 b7-b5 c4-c5 e7-f7 c5-c3 f8-b4 c3-b4 d4-c2'.split(' '), url: 'https://www.youtube.com/shorts/vxueuzvG2P0' },
 
     { appliesTo: 'white', name: `Halosar Trap`, moves: 'd2-d4 d7-d5 e2-e4 d5-e4 b1-c3 g8-f6 f2-f3 e4-f3 d1-f3 d8-d4 c1-e3 d4-b4 e1-c1&a1-d1 c8-g4 c3-b5 b8-a6 f3-b7 a8-b8 b7-b8 a6-b8 b5-c7 #'.split(' '), url: 'https://www.youtube.com/shorts/5a_h1tg5aGQ' },
+    
+    // todo : parse [c1-g5 e7-f7] as with or without
+    { appliesTo: 'white', name: `Knightmare 1a`, moves: 'e2-e4 e7-e5 f1-c4 g8-f6 g1-f3 f6-e4 b1-c3 e4-c3 d2-c3 d7-d6 f3-e5 d6-e5 c4-f7 e8-e7 c1-g5 e7-f7 d1-d8'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'white', name: `Knightmare 1b`, moves: 'e2-e4 e7-e5 f1-c4 g8-f6 g1-f3 f6-e4 b1-c3 e4-c3 d2-c3 d7-d6 f3-e5 d6-e5 c4-f7 e8-f7 d1-d8'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    
+    { appliesTo: 'white', name: `Knightmare 2a - Vienna Gambit`, moves: 'e2-e4 e7-e5 b1-c3 g8-f6 f2-f4 e5-f4 e4-e5 d8-e7 d1-e2 f6-g8 g1-f3 d7-d6 c3-d5 e7-d8 d5-c7 d8-c7 e5-d6 e8-d8 d6-c7'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'white', name: `Knightmare 2b - Vienna Gambit`, moves: 'e2-e4 e7-e5 b1-c3 g8-f6 f2-f4 e5-f4 e4-e5 d8-e7 d1-e2 f6-g8 g1-f3 d7-d6 c3-d5 e7-d8 d5-c7 d8-c7 e5-d6 e8-d7 d6-c7'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'white', name: `Knightmare 3 - Ponziani Opening`, moves: 'e2-e4 e7-e5 g1-f3 b8-c6 c2-c3 g8-f6 d2-d4 f6-e4 d4-d5 c6-e7 f3-e5 d7-d6 f1-b5 c7-c6 d5-c6 d8-b6 c6-b7 e8-d8 e5-f7 d8-c7 b7-a8n'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'black', name: `Knightmare 5 - Four Knights Game : Italian Variation`, moves: 'e2-e4 e7-e5 g1-f3 b8-c6 f1-c4 g8-f6 b1-c3 f6-e4 c3-e4 d7-d5 c4-d5 d8-d5 e4-c3 d5-d6 e1-g1&h1-f1 c8-g4 h2-h3 h7-h5 h3-g4 h5-g4 * d6-h6 * h6-h2'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'white', name: `Knightmare 6 - Scotch Game`, moves: 'e2-e4 e7-e5 g1-f3 b8-c6 d2-d4 e5-d4 f3-g5 h7-h6 g5-f7 e8-f7 f1-c4 f7-e8 d1-h5 e8-e7 h5-f7 e7-d6 c1-f4 d6-c5 f7-d5 c5-b6 d5-b5 #'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'white', name: `Knightmare 7a - KnightCloud (Alapin Opening)`, moves: 'e2-e4 e7-e5 g1-e2 g8-f6 f2-f4 e5-f4 e2-f4 f6-e4 d1-e2 d7-d5 d2-d3'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'white', name: `Knightmare 7b - KnightCloud (Alapin Opening)`, moves: 'e2-e4 e7-e5 g1-e2 g8-f6 f2-f4 e5-f4 e2-f4 f6-e4 d1-e2 d8-e7 f4-d5 e7-e5 b1-c3 c7-c6 d2-d4 e5-d4 c3-e4 d4-d5 e4-f6 e8-d8 f6-d5'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'white', name: `Knightmare 7c - KnightCloud (Alapin Opening)`, moves: 'e2-e4 e7-e5 g1-e2 g8-f6 f2-f4 e5-f4 e2-f4 f6-e4 d1-e2 d8-e7 f4-d5 e7-e5 b1-c3 c7-c6 d2-d4 e5-d4 c3-e4 c6-d5 e4-d6 e8-d8 e2-e8 d8-c7 d6-b5 c7-b6 e8-d8 b6-a6 b5-d4 b7-b5 d8-c7 b8-c6 f1-b5 #'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'white', name: `Knightmare 8a - Petrovs Defense`, moves: 'e2-e4 e7-e5 g1-f3 g8-f6 f3-e5 d7-d6 e5-f7 e8-f7 d2-d4 f6-e4 d1-h5 g7-g6 h5-d5 c8-e6'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'white', name: `Knightmare 8b - Petrovs Defense`, moves: 'e2-e4 e7-e5 g1-f3 g8-f6 f3-e5 d7-d6 e5-f7 e8-f7 d2-d4 f6-e4 d1-h5 f7-g8 h5-d5 c8-e6 d5-e6 #'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'white', name: `Knightmare 8c - Petrovs Defense`, moves: 'e2-e4 e7-e5 g1-f3 g8-f6 f3-e5 d7-d6 e5-f7 e8-f7 d2-d4 f6-e4 d1-h5 f7-e7 h5-e2 d6-d5 c1-g5'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'white', name: `Knightmare 9 - Halloween Gambit`, moves: 'e2-e4 e7-e5 g1-f3 b8-c6 b1-c3 g8-f6 f3-e5 c6-e5 d2-d4 e5-g6 e4-e5 f6-g8 f1-c4 f8-b4 d1-f3 d8-e7 h2-h4 b4-c3 b2-c3 g6-h4 h1-h4 e7-h4 f3-f7 e8-d8 f7-f8'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'black', name: `Knightmare 10a - Scandinavian Modern Variation`, moves: 'e2-e4 d7-d5 e4-d5 g8-f6 d2-d4 f6-d5 c2-c4 d5-b4 d1-a4 b8-c6 d4-d5 b7-b5 c4-b5 c6-d4 a4-b4 d4-c2'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+    { appliesTo: 'black', name: `Knightmare 10b - Scandinavian Modern Variation`, moves: 'e2-e4 d7-d5 e4-d5 g8-f6 d2-d4 f6-d5 c2-c4 d5-b4 d1-a4 b8-c6 d4-d5 b7-b5 c4-b5 c6-d4 b1-a3 e7-e5 c1-d2 d8-d5 d2-b4 d5-e4 g1-e2 f8-b4 a4-b4 d4-f3 g2-f3 e4-b4 e2-c3 b4-b2'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
+
+
 ]
