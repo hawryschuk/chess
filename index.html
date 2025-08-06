@@ -2,8 +2,6 @@
 <html>
 
 <head>
-    <link rel="stylesheet" href="node_modules/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.min.css"
-        crossorigin="anonymous">
     <style>
         #boards {
             display: flex;
@@ -16,7 +14,32 @@
             flex: 0 0 400px;
             background: lightgray;
         }
+
+        [data-square] {
+            transition: background-color 0.4s;
+        }
+
+        [data-square].valid:not([class*="highlight"]) {
+            box-shadow: inset 0 0 3px 3px black;
+        }
+
+        [data-square].invalid {
+            box-shadow: initial;
+        }
+
+        .checked,
+        .checkmated {
+            background-color: red !important;
+        }
+
+        .checkmated img {
+            transform: rotate(90deg);
+            transform-origin: center center;
+            transition: transform 0.5s;
+        }
     </style>
+    <link rel="stylesheet" href="node_modules/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.min.css"
+        crossorigin="anonymous">
 </head>
 
 <body>

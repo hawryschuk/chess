@@ -149,7 +149,7 @@ export class App {
                         game.move(game.moves()[0]);
                     } else {
                         const [from, to, _promotion] = m.match(/^([a-h][1-8])-([a-h][1-8])([rqbn])?$/i)?.slice(1) || [];
-                        // console.log({ from, to, _promotion, m })
+
                         // chessboardjs -- ui board
                         board.move(`${from}-${to}`);
 
@@ -176,7 +176,6 @@ export class App {
                             if (to) gamemove(from, to, promotion);
                             else throw new Error('unknown move')
                         }
-
                     }
                 }
                 if (doublemove && doublemove !== 2) {
@@ -211,7 +210,7 @@ export class App {
 
             const $board = $('#boards .board').last();
 
-            // we create one temporary chessboard to plot each, without animation, to get the position, 
+            // get the position before the final move is placed : create a temporary gui chessboard w/o animation
             let position = (() => {
                 const board1 = Chessboard($board, { position: 'start', moveSpeed: 0, orientation });
                 for (const move of moves) domove(game, board1, move, false);
@@ -235,17 +234,26 @@ export class App {
                 orientation,
                 onDragStart: (source, piece) => {
                     const correcturn = piece.startsWith(game.turn()[0]);
+
+                    /** Note valid and invalid squares : so valid are highlighted and invalid dont get highlighted on :hover */
+                    $board.find(`[data-square]`).addClass('invalid');
+                    $board.find(`[data-square]`).removeClass('valid');
+                    for (const square of game.moves({ square: source })) {
+                        $board.find(`[data-square="${square}"]`)
+                            .removeClass('invalid')
+                            .addClass('valid');
+                    }
+
                     return correcturn;
                 },
                 // let the user extend the opening with a new move -- copying the change to the clipboard for it to be pasted and hard-coded...
                 onDrop: (source, target, piece, newPos, oldPos, orientation) => {
                     const checkmate = target == 'offboard' && piece.endsWith('K') && '#';
 
-                    if (target === 'offboard' && !checkmate) return 'snapback';
-                    else if (source == target) {
-                        if (nextMove) this.next(nextMove);
-                        else return;
-                    }
+                    $board.find(`[data-square]`).removeClass('valid invalid');
+
+                    if (source == target && nextMove) this.next(nextMove);
+                    if (!checkmate && !game.moves({ square: source }).includes(target)) return 'snapback';
 
                     const newOpening = this.Selection.length === 0;
                     const creatingNew = !final || newOpening;
@@ -303,7 +311,8 @@ export class App {
                         try {
                             this.Selection = r;
                         } catch (e) {
-                            debugger;
+                            console.error(e);
+                            // debugger;
                         }
 
                         console.error(e);
@@ -329,7 +338,36 @@ export class App {
                 board.position(position);
             }
 
-            this.drawn.push({ board, openings: common, nextMove, game })
+            this.drawn.push({ board, openings: common, nextMove, game, $board });
+
+            // signify in the gui the piece moved ( from, to )
+            const { from, to } = game.history({ verbose: true }).at(-1);
+            const darken = (square, percent = 0.3) => {
+                const $square = $board
+                    .find(`[data-square="${square}"]`);
+                const rgb = $square
+                    .css('background-color')
+                    .match(/(\d+)/g)
+                    .map(Number)
+                    .map(r => Math.floor(r * (1 - percent)))
+                    .map(r => r.toString(16).padStart(2, '0'))
+                    .join('');
+                $square.css('background-color', `#${rgb}`);
+            };
+            [to, from].forEach(square => darken(square));
+
+            /** signify in the gui whether the king has been:
+             * a) checkmated
+             * b) checked 
+             * */
+            const [king] = game.findPiece({ color: game.turn(), type: 'k' });
+            const $king = $board.find(`[data-square="${king}"]`);
+            if (game.isCheckmate())
+                $king.addClass('checkmated');
+            if (game.isCheck()) {
+                $king.addClass('checked');
+                setTimeout(() => $king.removeClass('checked'), 200);
+            }
         }
 
         $('#pgn').prop('disabled', this.drawn.length !== 1);
