@@ -126,7 +126,7 @@ export class App {
             const secondLast = opening.moves.length === moves.length + 1 && 'green';
             const nextMove = opening.moves.length === 0 && orientation
                 || opening.moves[moves.length]
-                || !final && opening.moves[moves.length - 1]
+                || !final && common.sort((a, b) => b.moves.length - a.moves.length).moves[moves.length - 1]
                 || '';
             const game = new Chess;
             let clearPieces;
@@ -138,13 +138,14 @@ export class App {
                 const moves = move.split('&').filter(Boolean);
                 let doublemove = moves.length > 1 ? 1 : 0;
                 for (const m of moves) {
-                    if (m === '#') { // signifies checkmate
-                        const turn = game.turn();
-                        const position = board.position();
-                        const kingPosition = Object.keys(position).find(square => position[square] === `${turn[0]}K`);
-                        delete position[kingPosition];
-                        board.position(position);
-                    } else if (m === '*') { // signifies any piece can move -- visualized by hiding all color's pieces
+                    // if (m === '#') { // signifies checkmate
+                    //     const turn = game.turn();
+                    //     const position = board.position();
+                    //     const kingPosition = Object.keys(position).find(square => position[square] === `${turn[0]}K`);
+                    //     delete position[kingPosition];
+                    //     board.position(position);
+                    // } else
+                    if (m === '*') { // signifies any piece can move -- visualized by hiding all color's pieces
                         clearPieces ||= game.turn();
                         game.move(game.moves()[0]);
                     } else {
@@ -229,31 +230,49 @@ export class App {
 
             const board = Chessboard($board, {
                 position,
-                draggable: nextMove !== '#' && !this.Opening && !!nextMoves.length,
+                draggable: !this.Opening && !!nextMoves.length, //nextMove !== '#' && 
                 moveSpeed,
                 orientation,
                 onDragStart: (source, piece) => {
                     const correcturn = piece.startsWith(game.turn()[0]);
+                    const canmovepiece = game.moves({ square: source }).length > 0;
+
+                    $board.find(`[data-square]`).removeClass('valid moveable');
+                    $board.find(`[data-square]`).addClass('invalid');
 
                     /** Note valid and invalid squares : so valid are highlighted and invalid dont get highlighted on :hover */
-                    $board.find(`[data-square]`).addClass('invalid');
-                    $board.find(`[data-square]`).removeClass('valid');
-                    for (const square of game.moves({ square: source })) {
-                        $board.find(`[data-square="${square}"]`)
-                            .removeClass('invalid')
-                            .addClass('valid');
+                    if (correcturn && canmovepiece) {
+                        for (const square of game.moves({ square: source, verbose: true }).map(m => m.to)) {
+                            $board.find(`[data-square="${square}"]`)
+                                .removeClass('invalid')
+                                .addClass('valid');
+                        }
+                        return true;
                     }
 
-                    return correcturn;
+                    /** Highlight moveable pieces */
+                    if (!canmovepiece) {
+                        const squares = game.moves({ verbose: true }).map(m => m.from);
+                        for (const square of squares)
+                            $board.find(`[data-square="${square}"]`)
+                                .addClass('moveable')
+                                .removeClass('invalid');
+                        setTimeout(() => $board.find(`[data-square]`).removeClass('moveable'), 150);
+                    }
+
+                    return false;
                 },
                 // let the user extend the opening with a new move -- copying the change to the clipboard for it to be pasted and hard-coded...
                 onDrop: (source, target, piece, newPos, oldPos, orientation) => {
-                    const checkmate = target == 'offboard' && piece.endsWith('K') && '#';
+                    // const checkmate = target == 'offboard' && piece.endsWith('K') && '#';
+                    const enpassant = piece.endsWith('P') && (source[0] !== target[0]) && !$board.position()[target];
+                    const castling = piece.endsWith('K') && (source[1] === target[1]) && Math.abs(source.charCodeAt(0) - target.charCodeAt(0)) === 2;
 
-                    $board.find(`[data-square]`).removeClass('valid invalid');
+                    $board.find(`[data-square]`).removeClass('valid invalid moveable');
 
                     if (source == target && nextMove) this.next(nextMove);
-                    if (!checkmate && !game.moves({ square: source }).includes(target)) return 'snapback';
+
+                    if (!game.moves({ square: source, verbose: true }).map(m => m.to).includes(target)) return 'snapback';
 
                     const newOpening = this.Selection.length === 0;
                     const creatingNew = !final || newOpening;
@@ -273,17 +292,17 @@ export class App {
                     const move = (() => {
                         const move = [source, target].join('-');
 
-                        if (checkmate)
-                            return '#';
+                        // if (checkmate)
+                        //     return '#';
 
                         // en passent : same row : one file over
-                        else if (piece.endsWith('P') && (source[1] === target[1]) && Math.abs(source.charCodeAt(0) - target.charCodeAt(0)) === 1) {
-                            const second = `${target}-${target[0]}${parseInt(target[1]) + (game.turn()[0] === 'w' ? 1 : -1)}`;
-                            return [move, second].join('&');
+                        if (enpassant) {
+                            const first = `${target[0]}${source[1]}`;
+                            return [`${source}-${first}`, `${first}-${target}`].join('&');
                         }
 
                         // castling : K : same row : moves 2 files over
-                        else if (piece.endsWith('K') && (source[1] === target[1]) && Math.abs(source.charCodeAt(0) - target.charCodeAt(0)) === 2) {
+                        else if (castling) {
                             const second = (() => {
                                 const rank = source[1]; // a1 ( file, rank )
                                 const rookSourceFile = source > target ? 'a' : 'h'; // king moves left , thus rook is at a
@@ -340,33 +359,35 @@ export class App {
 
             this.drawn.push({ board, openings: common, nextMove, game, $board });
 
-            // signify in the gui the piece moved ( from, to )
-            const { from, to } = game.history({ verbose: true }).at(-1);
-            const darken = (square, percent = 0.3) => {
-                const $square = $board
-                    .find(`[data-square="${square}"]`);
-                const rgb = $square
-                    .css('background-color')
-                    .match(/(\d+)/g)
-                    .map(Number)
-                    .map(r => Math.floor(r * (1 - percent)))
-                    .map(r => r.toString(16).padStart(2, '0'))
-                    .join('');
-                $square.css('background-color', `#${rgb}`);
-            };
-            [to, from].forEach(square => darken(square));
+            if (game.history().length) {
+                // signify in the gui the piece moved ( from, to )
+                const { from, to } = game.history({ verbose: true }).at(-1);
+                const darken = (square, percent = 0.3) => {
+                    const $square = $board
+                        .find(`[data-square="${square}"]`);
+                    const rgb = $square
+                        .css('background-color')
+                        .match(/(\d+)/g)
+                        .map(Number)
+                        .map(r => Math.floor(r * (1 - percent)))
+                        .map(r => r.toString(16).padStart(2, '0'))
+                        .join('');
+                    $square.css('background-color', `#${rgb}`);
+                };
+                [to, from].forEach(square => darken(square));
 
-            /** signify in the gui whether the king has been:
-             * a) checkmated
-             * b) checked 
-             * */
-            const [king] = game.findPiece({ color: game.turn(), type: 'k' });
-            const $king = $board.find(`[data-square="${king}"]`);
-            if (game.isCheckmate())
-                $king.addClass('checkmated');
-            if (game.isCheck()) {
-                $king.addClass('checked');
-                setTimeout(() => $king.removeClass('checked'), 200);
+                /** signify in the gui whether the king has been:
+                 * a) checkmated
+                 * b) checked 
+                 * */
+                const [king] = game.findPiece({ color: game.turn(), type: 'k' });
+                const $king = $board.find(`[data-square="${king}"]`);
+                if (game.isCheckmate())
+                    $king.addClass('checkmated');
+                if (game.isCheck()) {
+                    $king.addClass('checked');
+                    setTimeout(() => $king.removeClass('checked'), 200);
+                }
             }
         }
 
