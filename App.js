@@ -1,10 +1,13 @@
 import { Chess } from './node_modules/chess.js/dist/esm/chess.js';
 import { openings } from './openings.js';
+
+/** Depends on jquery($) and chessboardjs(Chessboard) being loaded via <script> tags */
 export class App {
 
     database = openings;
 
-    get Selection() { return (localStorage.selection || '').split(',').filter(Boolean); }
+    /** comma delimited list of moves */
+    get Selection() { return (localStorage.selection || '').split(/[, ]/).filter(Boolean); }
     set Selection(selection) { localStorage.selection = selection; this.draw(); }
 
     set Opening(opening) {
@@ -40,28 +43,46 @@ export class App {
             this.Opening = '';
             this.Selection = Selection;
         });
+        $('#import-pgn').on('click', async () => {
+            const text = await navigator.clipboard.readText();
+            const chess = new Chess();
+            try { chess.loadPgn(text) } catch (e) { return alert(e) }
+            const moves = chess.history({ verbose: true }).map(m => `${m.from}-${m.to}`);
+            const { Link: url, Black, White, Date } = chess.getHeaders();
+            const line = { appliesTo: 'white', name: `${Date} : ${Black} vs. ${White}`, moves, url };
+            const json = JSON.stringify(line);
+            const index = (() => { const i = this.database.findIndex(l => l.name === line.name); return i == -1 ? this.database.length : i; })();
+            this.database.splice(index, 1, line);
+            this.initOpenings();
+            this.Opening = index;
+            navigator.clipboard.writeText(json);
+        });
         $('#next').on('click', () => this.next());
         $('#back').on('click', () => this.back());
-        $('#opening')
-            .html('<option value="">--opening--</option>' + this.database.map((o, i) => `<option value=${i}>${o.appliesTo} : ${o.name}</option>`).join(''))
-            .on('change', ({ target }) => { this.Opening = target.value; $(target).blur() })
-            .val(this.Opening ? this.database.indexOf(this.Opening) : '');
+        this.initOpenings();
         this.draw();
         // this.test();
     }
 
-    pause(ms = 200) { return new Promise(r => setTimeout(r, ms)); }
+    initOpenings() {
+        $('#opening')
+            .html('<option value="">--opening--</option>' + this.database.map((o, i) => `<option value=${i}>${o.appliesTo} : ${o.name}</option>`).join(''))
+            .on('change', ({ target }) => { this.Opening = target.value; $(target).blur() })
+            .val(this.Opening ? this.database.indexOf(this.Opening) : '');
+    }
 
+    /** Play through all the openings - pausing 200ms per move */
     async test() {
+        const pause = (ms = 200) => { return new Promise(r => setTimeout(r, ms)); };
         const { lastTest = '9' } = localStorage;
         for (const o of this.database.slice(lastTest)) {
             const index = this.database.indexOf(o).toString();
             this.Opening = index;
             // console.log(localStorage.lastTest = index);
-            await this.pause();
+            await pause();
             for (const move of o.moves) {
                 this.Selection = [...this.Selection, move];
-                await this.pause();
+                await pause();
             }
             // debugger;
         }
@@ -82,7 +103,7 @@ export class App {
         }
     }
 
-    get lines() { return this.database.filter(opening => this.Selection.slice(1).every((move, index) => opening.moves[index] == move)); }
+    get lines() { return this.database.filter(opening => this.Selection.slice(1).every((move, index) => opening.moves[index] == move)).sort((a, b) => b.moves.length - a.moves.length); }
     get extending() { return this.lines.length === 1 && this.lines[0].moves.length === this.Selection.length - 1; }
 
     drawn = [];
@@ -120,7 +141,7 @@ export class App {
             const common = !this.Selection.length
                 ? database.filter(o => o.appliesTo === opening.appliesTo)
                 : openings.filter(o => o.moves[moves.length] == opening.moves[moves.length]);
-            const index = common.indexOf(opening);
+            const index = common.indexOf(opening); if (index > 0 && opening.moves.length) continue;
             const orientation = opening.appliesTo;
             const final = opening.moves.length === moves.length && 'red';
             const secondLast = opening.moves.length === moves.length + 1 && 'green';
@@ -128,11 +149,13 @@ export class App {
                 || opening.moves[moves.length]
                 || !final && common.sort((a, b) => b.moves.length - a.moves.length).moves[moves.length - 1]
                 || '';
+            if (nextMove === 'd') debugger;
             const game = new Chess;
             let clearPieces;
 
             // make the move : 1) chessboardjs(ui), 2) chessjs (memory)
             const domove = (game, board, move, islast) => {
+                console.log({ move })
                 if (move.match(/black|white/)) return;
                 const gamemove = (from, to, promotion) => { game.move({ from, to, promotion }); };
                 const moves = move.split('&').filter(Boolean);
@@ -155,6 +178,7 @@ export class App {
                         board.move(`${from}-${to}`);
 
                         const piece = board.position()[to];
+                        if (!piece) debugger;
                         const promotion = piece[1] === 'P' && '18'.includes(to[1]) ? _promotion || 'q' : undefined; // auto-rpomote to queen
 
                         // replace the pawn with a queen on the chessboardjs
@@ -184,8 +208,6 @@ export class App {
                     throw new Error('DoubleMove');
                 }
             };
-
-            if (index > 0 && opening.moves.length) continue;
 
             $('#moves a').eq(opening.moves.length).css('color', 'red');
             $('#moves a').eq(opening.moves.length - 1).css('color', 'green');
@@ -265,7 +287,7 @@ export class App {
                 // let the user extend the opening with a new move -- copying the change to the clipboard for it to be pasted and hard-coded...
                 onDrop: (source, target, piece, newPos, oldPos, orientation) => {
                     // const checkmate = target == 'offboard' && piece.endsWith('K') && '#';
-                    const enpassant = piece.endsWith('P') && (source[0] !== target[0]) && !$board.position()[target];
+                    const enpassant = piece.endsWith('P') && (source[0] !== target[0]) && !board.position()[target];
                     const castling = piece.endsWith('K') && (source[1] === target[1]) && Math.abs(source.charCodeAt(0) - target.charCodeAt(0)) === 2;
 
                     $board.find(`[data-square]`).removeClass('valid invalid moveable');
@@ -283,6 +305,7 @@ export class App {
                         this.database.push(_opening);
                         _opening.moves.splice(this.Selection.length - 1);
                         _opening.name += ' ( clone )';
+                        this.initOpenings();
                     }
 
                     _opening.moves = this.Selection.slice(1);

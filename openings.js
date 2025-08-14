@@ -86,5 +86,15 @@ export const openings = [
 
     { appliesTo: 'white', name: `Beyer Gambit`, moves: 'e2-e4 e7-e5 d2-d4 d7-d5 b1-c3 e5-d4 d1-d4 d5-e4 c3-d5 c7-c6 d4-e5 e8-d7 e5-f5 d7-d6 c1-f4 d6-c5 b2-b4 c5-d4 c2-c3'.split(' '), url: 'https://www.youtube.com/watch?v=0lrxFCHb-HQ' },
 
+    { appliesTo: "white", name: "2025.06.19 : RUSTAM-009 vs. nileshprajapa", moves: "d2-d4 d7-d5 d1-d3 e7-e6 e2-e4 d5-e4 d3-e4 g8-f6 e4-e3 b8-c6 c2-c4 c6-d4 b1-a3 f8-a3 e3-c3 f6-e4 c3-d3 a3-b4 e1-d1 e4-f2".split(' '), url: "https://www.chess.com/game/live/139757336514" },
+    { appliesTo: "white", name: "Kings Gambit Pawn Checkmate", moves: "e2-e4 e7-e5 f2-f4 e5-f5&f5-f4 g1-f3 f8-e7 f1-c4 e7-h4 g2-g3 f4-g4&g4-g3 e1-g1&h1-f1 g3-h3&h3-h2 g1-h1 h4-e7 c4-f7 e8-f7 f3-e5 f7-e8 d1-h5 g7-g6 e5-g6 g8-f6 f1-f6 e7-f6 g6-e5 e8-e7 h5-f7 e7-d6 e5-c4 d6-c5 f7-d5 c5-b4 a2-a3 b4-a4 b2-b3".split(' '), url: "https://www.youtube.com/watch?v=VmS8o0nhUaQ" },
+    
+    { appliesTo: "white", name: "Belgrade Gambit (1)", moves: "e2-e4 e7-e5 g1-f3 b8-c6 b1-c3 g8-f6 d2-d4 e5-d4 c3-d5 f6-e4 d1-e2 f7-f5 f3-g5 h7-h6 e2-h5".split(' '), url: "https://www.youtube.com/watch?v=_jCKY64dln0" },
+    { appliesTo: "white", name: "Belgrade Gambit (2)", moves: "e2-e4 e7-e5 g1-f3 b8-c6 b1-c3 g8-f6 d2-d4 e5-d4 c3-d5 f6-e4 d1-e2 f7-f5 f3-g5 c6-e7 g5-e4 e7-d5 e4-d6".split(' '), url: "https://www.youtube.com/watch?v=_jCKY64dln0" },
+    { appliesTo: "white", name: "Belgrade Gambit (3)", moves: "e2-e4 e7-e5 g1-f3 b8-c6 b1-c3 g8-f6 d2-d4 e5-d4 c3-d5 f6-e4 d1-e2 f7-f5 f3-g5 c6-e7 g5-e4 f5-e4 e2-h5 e7-g6 c1-g5 f8-e7".split(' '), url: "https://www.youtube.com/watch?v=_jCKY64dln0" },
+    { appliesTo: "white", name: "Belgrade Gambit (4)", moves: "e2-e4 e7-e5 g1-f3 b8-c6 b1-c3 g8-f6 d2-d4 e5-d4 c3-d5 f6-e4 d1-e2 f7-f5 f3-g5 c6-e7 g5-e4 f5-e4 e2-h5 g7-g6 h5-e5 d7-d6 f1-c4 d6-e5 d5-f6".split(' '), url: "https://www.youtube.com/watch?v=_jCKY64dln0" },
+    { appliesTo: "white", name: "Belgrade Gambit (5)", moves: "e2-e4 e7-e5 g1-f3 b8-c6 b1-c3 g8-f6 d2-d4 e5-d4 c3-d5 f6-e4 d1-e2 f7-f5 f3-g5 f8-e7 g5-e4 f5-e4 e2-e4 e8-g8&h8-f8 f1-d3 g7-g6 c1-h6 f8-e8 e1-g1&h1-f1 e7-f8 d5-f6 d8-f6 e4-e8".split(' '), url: "https://www.youtube.com/watch?v=_jCKY64dln0" },
+    { appliesTo: "white", name: "Belgrade Gambit (6)", moves: "e2-e4 e7-e5 g1-f3 b8-c6 b1-c3 g8-f6 d2-d4 e5-d4 c3-d5 f6-e4 d1-e2 f7-f5 f3-g5 d4-d3 e2-d3 e4-g5 c1-g5 d8-g5 d5-c7 e8-d8 c7-e6".split(' '), url: "https://www.youtube.com/watch?v=_jCKY64dln0" },
+    { appliesTo: "white", name: "Belgrade Gambit (7)", moves: "e2-e4 e7-e5 g1-f3 b8-c6 b1-c3 g8-f6 d2-d4 e5-d4 c3-d5 f6-d5 e4-d5 c6-e7 d1-d4 d7-d6 f1-d3 e7-g6 e1-g1&h1-f1 f8-e7 d4-g7 e7-f6 f1-e1 e8-d7 d3-f5".split(' '), url: "https://www.youtube.com/watch?v=_jCKY64dln0" },
 
 ].sort((a, b) => a.appliesTo.localeCompare(b.appliesTo) || a.name.localeCompare(b.name))
