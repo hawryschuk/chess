@@ -215,7 +215,7 @@ export class App {
 
             const $board = $('#boards .board').last();
 
-            // get the position before the final move is placed : create a temporary gui chessboard w/o animation
+            /* get the position before the final move is placed : create a temporary gui chessboard w/o animation */
             let position = (() => {
                 const board1 = Chessboard($board, { position: 'start', moveSpeed: 0, orientation });
                 for (const move of moves) this.domove(game, board1, move, false);
@@ -224,19 +224,22 @@ export class App {
                 return position;
             })();
 
-            const nextMoves = (() => {
+            const canMoveMore = (() => {
                 const game2 = new Chess(game.fen());
                 const board2 = Chessboard($board, { position, moveSpeed, orientation, moveSpeed: 0 });
                 if (nextMove) this.domove(game2, board2, nextMove, true);
                 board2.destroy();
-                return game2.moves();
+                return game2.moves().length > 0;
             })();
 
             const board = Chessboard($board, {
                 position,
-                draggable: !this.Opening && !!nextMoves.length, //nextMove !== '#' && 
+                draggable: !this.Opening && canMoveMore,
                 moveSpeed,
                 orientation,
+
+                /** Only drag pieces of : a) the turn's color, b) pieces that can be moved 
+                 * - Highlight either   : a) valid targets   , b) moveable pieces */
                 onDragStart: (source, piece) => {
                     const correcturn = piece.startsWith(game.turn()[0]);
                     const canmovepiece = game.moves({ square: source }).length > 0;
@@ -266,7 +269,8 @@ export class App {
 
                     return false;
                 },
-                // let the user extend the opening with a new move -- copying the change to the clipboard for it to be pasted and hard-coded...
+
+                /* let the user extend the opening with a new move -- copying the change to the clipboard for it to be pasted and hard-coded... */
                 onDrop: (source, target, piece, newPos, oldPos, orientation) => {
 
                     $board.find(`[data-square]`).removeClass('valid invalid moveable');
@@ -317,6 +321,7 @@ export class App {
                 }
             });
 
+            /** Perform the next move - visually animating the last move */
             if (nextMove) {
                 this.domove(game, board, nextMove, true);
                 if (!secondLast) $board.on('click', () => { this.next(nextMove); });
@@ -331,6 +336,7 @@ export class App {
                 board.position(position);
             }
 
+            /** GUI visualations : a) piece moved, b) checked, c) checkmated */
             if (game.history().length) {
                 /** signify in the gui : the piece moved [from] - [to]  */
                 const { from, to } = game.history({ verbose: true }).at(-1);
@@ -355,7 +361,7 @@ export class App {
                     $king.addClass('checkmated');
                 if (game.isCheck()) {
                     $king.addClass('checked');
-                    setTimeout(() => $king.removeClass('checked'), 200);
+                    // setTimeout(() => $king.removeClass('checked'), 200);
                 }
             }
 
