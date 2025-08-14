@@ -5,26 +5,20 @@ import { openings } from './openings.js';
 export class App {
 
     database = openings;
+    drawn = [];
 
-    /** comma delimited list of moves */
     get Selection() { return (localStorage.selection || '').split(/[, ]/).filter(Boolean); }
     set Selection(selection) { localStorage.selection = selection; this.draw(); }
 
+    get Opening() { return this.database[localStorage.opening] }
     set Opening(opening) {
         localStorage.opening = opening;
         this.Selection = [this.Opening?.appliesTo].filter(Boolean);
         $('#opening').val(opening);
     }
-    get Opening() { return this.database[localStorage.opening] }
 
-    turn(nextMove) {
-        const selection = [...this.Selection, nextMove].filter(Boolean);
-        return ['white', 'black'][selection.length % 2];
-    }
-
-    otherTurn(turn) {
-        return ['black', 'white'].find(c => c !== turn)
-    }
+    turn(nextMove) { const selection = [...this.Selection, nextMove].filter(Boolean); return ['white', 'black'][selection.length % 2]; }
+    otherTurn(turn) { return ['black', 'white'].find(c => c !== turn) }
 
     constructor() {
         document.addEventListener('keydown', event => {
@@ -106,11 +100,55 @@ export class App {
     get lines() { return this.database.filter(opening => this.Selection.slice(1).every((move, index) => opening.moves[index] == move)).sort((a, b) => b.moves.length - a.moves.length); }
     get extending() { return this.lines.length === 1 && this.lines[0].moves.length === this.Selection.length - 1; }
 
-    drawn = [];
+    /** [static] make the move : 1) chessboardjs(ui), 2) chessjs (memory) */
+    domove(game, board, move, islast) {
+        if (move.match(/black|white/)) return;
+        if (move === '*') { // signifies any piece can move -- visualized by hiding all color's pieces
+            clearPieces ||= game.turn();
+            [move] = game.moves();
+        }
+
+        const [from, to, _promotion] = move.match(/^([a-h][1-8])-([a-h][1-8])([rqbn])?$/i)?.slice(1) || [];
+        const piece = board.position()[from];
+        const enpassant = piece.endsWith('P') && from[0] != to[0] && !board.position()[to];
+        const castling = piece.endsWith('K') && (from[1] === to[1]) && Math.abs(from.charCodeAt(0) - to.charCodeAt(0)) === 2;
+
+        if (castling) {
+            const second = (() => {
+                const rank = from[1]; // a1 ( file, rank )
+                const rookSourceFile = from > to ? 'a' : 'h'; // king moves left , thus rook is at a
+                const rookTargetFile = String.fromCharCode(from.charCodeAt(0) + (from < to ? 1 : -1));
+                const rookSource = rookSourceFile + rank;
+                const rookTarget = rookTargetFile + rank;
+                return `${rookSource}-${rookTarget}`;
+            })();
+            board.move(second);
+        }
+
+        if (enpassant) {
+            const position = board.position();
+            delete position[`${to[0]}${from[1]}`];
+            board.position(position);
+        }
+
+        // chessboardjs -- ui board
+        board.move(`${from}-${to}`);
+
+        if (!piece) debugger;
+        const promotion = piece[1] === 'P' && '18'.includes(to[1]) ? _promotion || 'q' : undefined; // auto-rpomote to queen
+
+        // replace the pawn with a queen on the chessboardjs
+        if (promotion) {
+            const position = board.position();
+            position[to] = piece[0] + promotion.toUpperCase();
+            board.position(position);
+        }
+
+        // chessjs - memory board/game
+        game.move({ from, to, promotion });
+    }
 
     draw() {
-        // clearInterval(this.interval);
-        // this.interval = setInterval(() => this.draw(), 3000);
         const { moveSpeed } = this;
         const moves = [...this.Selection];
         const database = [...this.database].sort((a, b) => b.moves.length - a.moves.length)
@@ -153,62 +191,6 @@ export class App {
             const game = new Chess;
             let clearPieces;
 
-            // make the move : 1) chessboardjs(ui), 2) chessjs (memory)
-            const domove = (game, board, move, islast) => {
-                console.log({ move })
-                if (move.match(/black|white/)) return;
-                const gamemove = (from, to, promotion) => { game.move({ from, to, promotion }); };
-                const moves = move.split('&').filter(Boolean);
-                let doublemove = moves.length > 1 ? 1 : 0;
-                for (const m of moves) {
-                    // if (m === '#') { // signifies checkmate
-                    //     const turn = game.turn();
-                    //     const position = board.position();
-                    //     const kingPosition = Object.keys(position).find(square => position[square] === `${turn[0]}K`);
-                    //     delete position[kingPosition];
-                    //     board.position(position);
-                    // } else
-                    if (m === '*') { // signifies any piece can move -- visualized by hiding all color's pieces
-                        clearPieces ||= game.turn();
-                        game.move(game.moves()[0]);
-                    } else {
-                        const [from, to, _promotion] = m.match(/^([a-h][1-8])-([a-h][1-8])([rqbn])?$/i)?.slice(1) || [];
-
-                        // chessboardjs -- ui board
-                        board.move(`${from}-${to}`);
-
-                        const piece = board.position()[to];
-                        if (!piece) debugger;
-                        const promotion = piece[1] === 'P' && '18'.includes(to[1]) ? _promotion || 'q' : undefined; // auto-rpomote to queen
-
-                        // replace the pawn with a queen on the chessboardjs
-                        if (promotion) {
-                            const position = board.position();
-                            position[to] = piece[0] + promotion.toUpperCase();
-                            board.position(position);
-                        }
-
-                        // chessjs - memory board/game
-                        if (doublemove) {
-                            if (piece?.endsWith('K')) {
-                                doublemove++;
-                                gamemove(from, to);
-                            } else if (piece?.endsWith('P') && moves.length === 2 && moves.indexOf(m) === 0) {
-                                doublemove++; // horizontal, then vertical
-                                gamemove(moves[0].split('-')[0], moves[1].split('-')[1]);
-                            }
-                        } else {
-                            if (to) gamemove(from, to, promotion);
-                            else throw new Error('unknown move')
-                        }
-                    }
-                }
-                if (doublemove && doublemove !== 2) {
-                    debugger;
-                    throw new Error('DoubleMove');
-                }
-            };
-
             $('#moves a').eq(opening.moves.length).css('color', 'red');
             $('#moves a').eq(opening.moves.length - 1).css('color', 'green');
             $('#boards').append(`
@@ -236,7 +218,7 @@ export class App {
             // get the position before the final move is placed : create a temporary gui chessboard w/o animation
             let position = (() => {
                 const board1 = Chessboard($board, { position: 'start', moveSpeed: 0, orientation });
-                for (const move of moves) domove(game, board1, move, false);
+                for (const move of moves) this.domove(game, board1, move, false);
                 const position = board1.position();
                 board1.destroy();
                 return position;
@@ -245,7 +227,7 @@ export class App {
             const nextMoves = (() => {
                 const game2 = new Chess(game.fen());
                 const board2 = Chessboard($board, { position, moveSpeed, orientation, moveSpeed: 0 });
-                if (nextMove) domove(game2, board2, nextMove, true);
+                if (nextMove) this.domove(game2, board2, nextMove, true);
                 board2.destroy();
                 return game2.moves();
             })();
@@ -286,9 +268,6 @@ export class App {
                 },
                 // let the user extend the opening with a new move -- copying the change to the clipboard for it to be pasted and hard-coded...
                 onDrop: (source, target, piece, newPos, oldPos, orientation) => {
-                    // const checkmate = target == 'offboard' && piece.endsWith('K') && '#';
-                    const enpassant = piece.endsWith('P') && (source[0] !== target[0]) && !board.position()[target];
-                    const castling = piece.endsWith('K') && (source[1] === target[1]) && Math.abs(source.charCodeAt(0) - target.charCodeAt(0)) === 2;
 
                     $board.find(`[data-square]`).removeClass('valid invalid moveable');
 
@@ -312,35 +291,7 @@ export class App {
 
                     if (nextMove && !newOpening && !final) _opening.moves.push(nextMove);
 
-                    const move = (() => {
-                        const move = [source, target].join('-');
-
-                        // if (checkmate)
-                        //     return '#';
-
-                        // en passent : same row : one file over
-                        if (enpassant) {
-                            const first = `${target[0]}${source[1]}`;
-                            return [`${source}-${first}`, `${first}-${target}`].join('&');
-                        }
-
-                        // castling : K : same row : moves 2 files over
-                        else if (castling) {
-                            const second = (() => {
-                                const rank = source[1]; // a1 ( file, rank )
-                                const rookSourceFile = source > target ? 'a' : 'h'; // king moves left , thus rook is at a
-                                const rookTargetFile = String.fromCharCode(source.charCodeAt(0) + (source < target ? 1 : -1));
-                                const rookSource = rookSourceFile + rank;
-                                const rookTarget = rookTargetFile + rank;
-                                return `${rookSource}-${rookTarget}`;
-                            })();
-                            return [move, second].join('&');
-                        }
-
-                        else {
-                            return move;
-                        }
-                    })();
+                    const move = [source, target].join('-');
 
                     _opening.moves.push(move);
 
@@ -367,7 +318,7 @@ export class App {
             });
 
             if (nextMove) {
-                domove(game, board, nextMove, true);
+                this.domove(game, board, nextMove, true);
                 if (!secondLast) $board.on('click', () => { this.next(nextMove); });
                 $board.find('.next .by').html(game.turn());
             }
@@ -380,10 +331,8 @@ export class App {
                 board.position(position);
             }
 
-            this.drawn.push({ board, openings: common, nextMove, game, $board });
-
             if (game.history().length) {
-                // signify in the gui the piece moved ( from, to )
+                /** signify in the gui : the piece moved [from] - [to]  */
                 const { from, to } = game.history({ verbose: true }).at(-1);
                 const darken = (square, percent = 0.3) => {
                     const $square = $board
@@ -399,10 +348,7 @@ export class App {
                 };
                 [to, from].forEach(square => darken(square));
 
-                /** signify in the gui whether the king has been:
-                 * a) checkmated
-                 * b) checked 
-                 * */
+                /** signify in the gui whether the king has been: checkmated OR checked */
                 const [king] = game.findPiece({ color: game.turn(), type: 'k' });
                 const $king = $board.find(`[data-square="${king}"]`);
                 if (game.isCheckmate())
@@ -412,6 +358,8 @@ export class App {
                     setTimeout(() => $king.removeClass('checked'), 200);
                 }
             }
+
+            this.drawn.push({ board, openings: common, nextMove, game, $board });
         }
 
         $('#pgn').prop('disabled', this.drawn.length !== 1);
