@@ -2,6 +2,8 @@
 <html>
 
 <head>
+    <title>Hawryschuk::Chess</title>
+    <meta title="Recall and Store Chess Lines/Openings" />
     <style>
         #boards {
             display: flex;
@@ -49,10 +51,8 @@
 </head>
 
 <body>
-
-    <div class="stepper">
-        <select id="opening"></select>
-
+    <select id="opening"></select>
+    <div class="buttons">
         <button type="button" id="reset">reset</button>
         <button type="button" id="draw">draw</button>
         <button type="button" id="next">next</button>
@@ -60,18 +60,18 @@
         <button type="button" id="extend">extend</button>
         <button type="button" id="pgn">pgn</button>
         <button type="button" id="import-pgn">import pgn</button>
-
-        <div id="moves"> </div>
-
-        <div id="boards"></div>
     </div>
+    <div id="moves"> </div>
+    <div id="boards"></div>
+</body>
 
+<footer>
     <script src="node_modules/jquery/dist/jquery.min.js"></script>
     <script src="node_modules/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.min.js"></script>
     <script type="module">
         import { App } from './app.js';
         globalThis.app = new App();
     </script>
-</body>
+</footer>
 
 </html>

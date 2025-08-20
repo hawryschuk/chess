@@ -17,8 +17,8 @@ export class App {
         $('#opening').val(opening);
     }
 
-    turn(nextMove) { const selection = [...this.Selection, nextMove].filter(Boolean); return ['white', 'black'][selection.length % 2]; }
-    otherTurn(turn) { return ['black', 'white'].find(c => c !== turn) }
+    get lines() { return this.database.filter(opening => this.Selection.slice(1).every((move, index) => opening.moves[index] == move)).sort((a, b) => b.moves.length - a.moves.length); }
+    get extending() { return this.lines.length === 1 && this.lines[0].moves.length === this.Selection.length - 1; }
 
     constructor() {
         document.addEventListener('keydown', event => {
@@ -57,6 +57,9 @@ export class App {
         this.draw();
         // this.test();
     }
+
+    turn(nextMove) { const selection = [...this.Selection, nextMove].filter(Boolean); return ['white', 'black'][selection.length % 2]; }
+    otherTurn(turn) { return ['black', 'white'].find(c => c !== turn) }
 
     initOpenings() {
         $('#opening')
@@ -97,15 +100,13 @@ export class App {
         }
     }
 
-    get lines() { return this.database.filter(opening => this.Selection.slice(1).every((move, index) => opening.moves[index] == move)).sort((a, b) => b.moves.length - a.moves.length); }
-    get extending() { return this.lines.length === 1 && this.lines[0].moves.length === this.Selection.length - 1; }
-
     /** [static] make the move : 1) chessboardjs(ui), 2) chessjs (memory) */
-    domove(game, board, move, islast) {
+    domove(game, board, move, clearPieces) {
         if (move.match(/black|white/)) return;
         if (move === '*') { // signifies any piece can move -- visualized by hiding all color's pieces
             clearPieces ||= game.turn();
-            [move] = game.moves();
+            const [{ from, to }] = game.moves({ verbose: true });
+            move = `${from}-${to}`;
         }
 
         const [from, to, _promotion] = move.match(/^([a-h][1-8])-([a-h][1-8])([rqbn])?$/i)?.slice(1) || [];
@@ -146,8 +147,11 @@ export class App {
 
         // chessjs - memory board/game
         game.move({ from, to, promotion });
+
+        return clearPieces;
     }
 
+    /** Draw all the database-lines/openings which apply to the selection/line [of moves] the user has made */
     draw() {
         const { moveSpeed } = this;
         const moves = [...this.Selection];
@@ -218,7 +222,7 @@ export class App {
             /* get the position before the final move is placed : create a temporary gui chessboard w/o animation */
             let position = (() => {
                 const board1 = Chessboard($board, { position: 'start', moveSpeed: 0, orientation });
-                for (const move of moves) this.domove(game, board1, move, false);
+                for (const move of moves) clearPieces = this.domove(game, board1, move, clearPieces);
                 const position = board1.position();
                 board1.destroy();
                 return position;
@@ -227,7 +231,7 @@ export class App {
             const canMoveMore = (() => {
                 const game2 = new Chess(game.fen());
                 const board2 = Chessboard($board, { position, moveSpeed, orientation, moveSpeed: 0 });
-                if (nextMove) this.domove(game2, board2, nextMove, true);
+                if (nextMove) this.domove(game2, board2, nextMove, clearPieces);
                 board2.destroy();
                 return game2.moves().length > 0;
             })();
@@ -323,7 +327,7 @@ export class App {
 
             /** Perform the next move - visually animating the last move */
             if (nextMove) {
-                this.domove(game, board, nextMove, true);
+                clearPieces = this.domove(game, board, nextMove, clearPieces);
                 if (!secondLast) $board.on('click', () => { this.next(nextMove); });
                 $board.find('.next .by').html(game.turn());
             }
