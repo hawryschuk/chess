@@ -85,6 +85,7 @@ export const openings = [
     { appliesTo: 'black', name: `Knightmare 10b - Scandinavian Modern Variation`, moves: 'e2-e4 d7-d5 e4-d5 g8-f6 d2-d4 f6-d5 c2-c4 d5-b4 d1-a4 b8-c6 d4-d5 b7-b5 c4-b5 c6-d4 b1-a3 e7-e5 c1-d2 d8-d5 d2-b4 d5-e4 g1-e2 f8-b4 a4-b4 d4-f3 g2-f3 e4-b4 e2-c3 b4-b2'.split(' '), url: 'https://www.youtube.com/watch?v=6KP7BzHpoBs' },
     
     { appliesTo: 'black', name: `Latvian Gambit`, moves: 'e2-e4 e7-e5 g1-f3 f7-f5 f3-e5 f8-c5 e4-f5 c5-f2 e1-f2 d8-h4 f2-g1 h4-d4'.split(' '), url: 'https://www.youtube.com/watch?v=rugCMzfEsmM' },
+    { appliesTo: 'black', name: `Englund Gambit`, moves: 'd2-d4 e7-e5 d4-e5 b8-c6 g1-f3 d8-e7 c1-f4 e7-b4 f4-d2 b4-b2 d2-c3 f8-b4 d1-d2 b4-c3 d2-c3 b2-c1'.split(' '), url: 'https://www.youtube.com/watch?v=B2IKO2co2oE' },
 
     { appliesTo: 'white', name: `Beyer Gambit`, moves: 'e2-e4 e7-e5 d2-d4 d7-d5 b1-c3 e5-d4 d1-d4 d5-e4 c3-d5 c7-c6 d4-e5 e8-d7 e5-f5 d7-d6 c1-f4 d6-c5 b2-b4 c5-d4 c2-c3'.split(' '), url: 'https://www.youtube.com/watch?v=0lrxFCHb-HQ' },
 

@@ -1,4 +1,4 @@
-import { Chess } from './node_modules/chess.js/dist/esm/chess.js';
+import { Chess } from './chess.js';
 import { openings } from './openings.js';
 
 /** Depends on jquery($) and chessboardjs(Chessboard) being loaded via <script> tags */

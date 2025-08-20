@@ -8,7 +8,9 @@
   "main": "",
   "devDependencies": {},
   "scripts": {
-    "start": "http-server . -c 5"
+    "start": "nodemon --watch . --ext js,html,css --exec \"npm run build\" & http-server . -c 5",
+    "build": "rm -rf dist && mkdir dist && cp -r CNAME *.css img/ *.html *.js dist/ || true && npm run build:deps && echo abc > dist/test.html",
+    "build:deps": "cp node_modules/chess.js/dist/esm/chess.js node_modules/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.min.css node_modules/@chrisoakman/chessboardjs/dist/chessboard-1.0.0.min.js node_modules/jquery/dist/jquery.min.js dist/"
   },
   "author": "",
   "license": "ISC",
