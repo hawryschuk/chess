@@ -24,7 +24,46 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+        
+      - name: Checkout @hawryschuk-common
+        uses: actions/checkout@v4
+        with:
+          repository: hawryschuk/common
+          path: "@hawryschuk-common"
+      - name: Install @hawryschuk-common
+        run: npm ci
+        working-directory: "@hawryschuk-common"
 
+      - name: Checkout @hawryschuk/locking
+        uses: actions/checkout@v4
+        with:
+          repository: hawryschuk/locking
+          token: ${{ secrets.PRIVATE_PAT }}
+          path: "@hawryschuk-locking"
+      - name: Install @hawryschuk/locking
+        run: npm ci
+        working-directory: "@hawryschuk-locking"
+
+      - name: Checkout @hawryschuk/crypto
+        uses: actions/checkout@v4
+        with:
+          repository: hawryschuk/crypto
+          token: ${{ secrets.PRIVATE_PAT }}
+          path: "@hawryschuk-crypto"
+      - name: Install @hawryschuk/crypto
+        run: npm ci
+        working-directory: "@hawryschuk-crypto"
+
+      - name: Checkout @hawryschuk/terminals
+        uses: actions/checkout@v4
+        with:
+          repository: hawryschuk/terminals
+          token: ${{ secrets.PRIVATE_PAT }}
+          path: "@hawryschuk-terminal-restapi"
+      - name: Install @hawryschuk/terminals
+        run: npm ci
+        working-directory: "@hawryschuk-terminal-restapi"
+      
       - name: Build project
         run: npm run build
 

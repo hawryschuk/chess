@@ -1,0 +1,11 @@
+<h1> Chess :: Sample </h1>
+
+<app-service-center [displayTerminals]="true" [(terminals)]="terminals" [(terminal)]="terminal"
+  [serviceCenter]="serviceCenter">
+
+  <app-chess *ngIf="client.Service?.name==='Chess' && client.Service?.Instance?.messages"
+    [terminal]="terminal"></app-chess>
+
+  <div class="joined-mid-session">Instance is running. Please wait until the instance ends...</div>
+
+</app-service-center>

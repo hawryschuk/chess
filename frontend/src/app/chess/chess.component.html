@@ -1,0 +1,12 @@
+<div #board class="board"></div>
+
+<div class="game-over" *ngIf="finished">
+    Game over!
+    <div *ngIf="client.Won"> You Win! </div>
+    <div *ngIf="client.Lost"> You Lost! </div>
+</div>
+
+<div class="in-progress" *ngIf="running">
+    <div class="your-turn" *ngIf="myturn"> Your Move </div>
+    <div class="their-turn" *ngIf="!myturn"> Their Move </div>
+</div>
